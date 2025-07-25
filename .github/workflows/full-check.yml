@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  security-events: write
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -13,6 +16,7 @@ jobs:
         image: selenium/standalone-chrome
         ports:
           - 4444:4444
+      
 
     steps:
       - name: Checkout repo
@@ -46,6 +50,17 @@ jobs:
         run: |
           cd tests
           node SeleniumTest.mjs github
+
+      - name: Run ESLint with SARIF output
+        run: |
+          mkdir -p reports
+          npx eslint . --format=@microsoft/eslint-formatter-sarif --output-file=reports/eslint-results.sarif
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/eslint-results.sarif
+
 
       - name: Run OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
