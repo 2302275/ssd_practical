@@ -43,12 +43,10 @@ jobs:
 
       - name: Install npm test tools
         run: |
-          cd tests
           npm install
 
       - name: Run Selenium UI Test
         run: |
-          cd tests
           node SeleniumTest.mjs github
 
       - name: Run ESLint with SARIF output
