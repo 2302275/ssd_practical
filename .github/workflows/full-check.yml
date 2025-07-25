@@ -1,0 +1,62 @@
+name: Full CI Check (Integration + Dependency + UI)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      selenium:
+        image: selenium/standalone-chrome
+        ports:
+          - 4444:4444
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install flask
+
+      - name: Start Flask app in background
+        run: |
+          nohup python flask-app/app.py &
+          sleep 3
+
+      - name: Install Node + Selenium deps
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm test tools
+        run: |
+          cd tests
+          npm install
+
+      - name: Run Selenium UI Test
+        run: |
+          cd tests
+          node SeleniumTest.mjs github
+
+      - name: Run OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'ssd_practical'
+          path: '.'
+          format: 'HTML'
+          out: 'dependency-check-report'
+
+      - name: Upload Dependency Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-report
+          path: dependency-check-report
